@@ -1,0 +1,87 @@
+#!/bin/sh
+#
+# @name Quad Tiltrotor Custom (4 Motors AUX + 4 Servos MAIN)
+#
+# @type VTOL Tiltrotor
+# @class VTOL
+#
+# @output Motor1 front-right motor - AUX1 (XING2 2809 1250KV)
+# @output Motor2 rear-left motor   - AUX2 (XING2 2809 1250KV)
+# @output Motor3 front-left motor  - AUX3 (XING2 2809 1250KV)
+# @output Motor4 rear-right motor  - AUX4 (XING2 2809 1250KV)
+# @output Servo1 front-right tilt  - MAIN1 (SPT4412LV)
+# @output Servo2 rear-left tilt    - MAIN2 (SPT4412LV)
+# @output Servo3 front-left tilt   - MAIN3 (SPT4412LV)
+# @output Servo4 rear-right tilt   - MAIN4 (SPT4412LV)
+#
+# @board px4_fmu-v2 exclude
+# @board bitcraze_crazyflie exclude
+#
+
+. ${R}etc/init.d/rc.vtol_defaults
+
+param set-default MAV_TYPE 21
+
+param set-default VT_TYPE 1
+
+# Control Allocation - Quad Tiltrotor
+param set-default CA_AIRFRAME 3
+
+# 4 rotors
+param set-default CA_ROTOR_COUNT 4
+
+# Motor 1 - front right (AUX 1)
+param set-default CA_ROTOR0_PX  0.15
+param set-default CA_ROTOR0_PY  0.15
+param set-default CA_ROTOR0_KM  0.05
+param set-default CA_ROTOR0_TILT 1
+
+# Motor 2 - rear left (AUX 2)
+param set-default CA_ROTOR1_PX -0.15
+param set-default CA_ROTOR1_PY -0.15
+param set-default CA_ROTOR1_KM  0.05
+param set-default CA_ROTOR1_TILT 2
+
+# Motor 3 - front left (AUX 3)
+param set-default CA_ROTOR2_PX  0.15
+param set-default CA_ROTOR2_PY -0.15
+param set-default CA_ROTOR2_KM -0.05
+param set-default CA_ROTOR2_TILT 3
+
+# Motor 4 - rear right (AUX 4)
+param set-default CA_ROTOR3_PX -0.15
+param set-default CA_ROTOR3_PY  0.15
+param set-default CA_ROTOR3_KM -0.05
+param set-default CA_ROTOR3_TILT 4
+
+# 4 tilt servos (MAIN 1-4)
+param set-default CA_SV_TL_COUNT 4
+
+param set-default CA_SV_TL0_MINA -45.0
+param set-default CA_SV_TL0_MAXA  45.0
+param set-default CA_SV_TL0_TD    90
+
+param set-default CA_SV_TL1_MINA -45.0
+param set-default CA_SV_TL1_MAXA  45.0
+param set-default CA_SV_TL1_TD    90
+
+param set-default CA_SV_TL2_MINA -45.0
+param set-default CA_SV_TL2_MAXA  45.0
+param set-default CA_SV_TL2_TD    90
+
+param set-default CA_SV_TL3_MINA -45.0
+param set-default CA_SV_TL3_MAXA  45.0
+param set-default CA_SV_TL3_TD    90
+
+# IO MAIN outputs (servos) - 50Hz pour SPT4412LV
+param set-default PWM_MAIN_RATE 50
+param set-default PWM_MAIN_MIN  1000
+param set-default PWM_MAIN_MAX  2000
+
+# AUX outputs (motors ESC) - 400Hz pour brushless
+param set-default PWM_AUX_RATE  400
+param set-default PWM_AUX_MIN   1000
+param set-default PWM_AUX_MAX   2000
+
+# Force IO usage for MAIN servo outputs
+param set-default SYS_USE_IO 1

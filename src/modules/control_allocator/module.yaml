@@ -28,6 +28,7 @@ parameters:
                 8: Multirotor with Tilt
                 9: Custom
                 10: Helicopter
+                13: Tilting Multirotor (OmniQuad)
             default: 0
 
         CA_METHOD:

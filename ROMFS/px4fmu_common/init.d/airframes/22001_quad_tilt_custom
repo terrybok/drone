@@ -5,14 +5,14 @@
 # @type Tilting Multirotor
 # @class Copter
 #
-# @output MAIN1 Motor 1 front-right (XING2 2809 1250KV)
-# @output MAIN2 Motor 2 rear-left   (XING2 2809 1250KV)
-# @output MAIN3 Motor 3 front-left  (XING2 2809 1250KV)
-# @output MAIN4 Motor 4 rear-right  (XING2 2809 1250KV)
-# @output MAIN5 Servo 1 front-right (SPT4412LV)
-# @output MAIN6 Servo 2 rear-left   (SPT4412LV)
-# @output MAIN7 Servo 3 front-left  (SPT4412LV)
-# @output MAIN8 Servo 4 rear-right  (SPT4412LV)
+# @output AUX1 Motor 1 front-right (XING2 2809 1250KV)
+# @output AUX2 Motor 2 rear-left   (XING2 2809 1250KV)
+# @output AUX3 Motor 3 front-left  (XING2 2809 1250KV)
+# @output AUX4 Motor 4 rear-right  (XING2 2809 1250KV)
+# @output MAIN1 Servo 1 tilt front-right (SPT4412LV)
+# @output MAIN2 Servo 2 tilt rear-left   (SPT4412LV)
+# @output MAIN3 Servo 3 tilt front-left  (SPT4412LV)
+# @output MAIN4 Servo 4 tilt rear-right  (SPT4412LV)
 #
 # @board px4_fmu-v2 exclude
 # @board bitcraze_crazyflie exclude
@@ -22,34 +22,40 @@
 
 param set-default MAV_TYPE 2
 
-# 4 rotors
+# ---- OmniQuad allocator activation (CRITICAL) ----
+# CA_AIRFRAME = 13 -> EffectivenessSource::TILTING_MULTIROTOR
+# CA_TILTING_TYPE = 1 -> Fully actuated (omnidirectional)
+param set-default CA_AIRFRAME 13
+param set-default CA_TILTING_TYPE 1
+
+# ---- 4 rotors geometry (X quad, arms ~0.166 m) ----
 param set-default CA_ROTOR_COUNT 4
 
-# Motor 1 - front right
+# Motor 1 - front right - CCW
 param set-default CA_ROTOR0_PX  0.166
 param set-default CA_ROTOR0_PY  0.166
 param set-default CA_ROTOR0_PZ  0.0
 param set-default CA_ROTOR0_KM  0.05
 
-# Motor 2 - rear left
+# Motor 2 - rear left - CCW
 param set-default CA_ROTOR1_PX -0.166
 param set-default CA_ROTOR1_PY -0.166
 param set-default CA_ROTOR1_PZ  0.0
 param set-default CA_ROTOR1_KM  0.05
 
-# Motor 3 - front left
+# Motor 3 - front left - CW
 param set-default CA_ROTOR2_PX  0.166
 param set-default CA_ROTOR2_PY -0.166
 param set-default CA_ROTOR2_PZ  0.0
 param set-default CA_ROTOR2_KM -0.05
 
-# Motor 4 - rear right
+# Motor 4 - rear right - CW
 param set-default CA_ROTOR3_PX -0.166
 param set-default CA_ROTOR3_PY  0.166
 param set-default CA_ROTOR3_PZ  0.0
 param set-default CA_ROTOR3_KM -0.05
 
-# 4 tilt servos
+# ---- 4 tilt servos ----
 param set-default CA_SV_TL_COUNT 4
 
 param set-default CA_SV_TL0_MINA -30.0
@@ -68,23 +74,35 @@ param set-default CA_SV_TL3_MINA -30.0
 param set-default CA_SV_TL3_MAXA  30.0
 param set-default CA_SV_TL3_TD    90
 
-# Direct output assignment - OmniQuad approach (PWM_MAIN_FUNC)
-# Motors → MAIN 1-4
-param set-default PWM_MAIN_FUNC1 101
-param set-default PWM_MAIN_FUNC2 102
-param set-default PWM_MAIN_FUNC3 103
-param set-default PWM_MAIN_FUNC4 104
+# ---- Output assignment (Pixhawk 6C) ----
+# Motors -> PWM AUX (FMU direct, fast PWM/DShot)
+# Tilts  -> PWM MAIN (IO coprocessor, 50 Hz, safe for analog servos)
+#
+# Function codes: 101..104 = Motor 1..4 ; 201..204 = Servo 1..4
 
-# Tilt Servos → MAIN 5-8
-param set-default PWM_MAIN_FUNC5 201
-param set-default PWM_MAIN_FUNC6 202
-param set-default PWM_MAIN_FUNC7 203
-param set-default PWM_MAIN_FUNC8 204
+# Motors on AUX 1-4
+param set-default PWM_AUX_FUNC1 101
+param set-default PWM_AUX_FUNC2 102
+param set-default PWM_AUX_FUNC3 103
+param set-default PWM_AUX_FUNC4 104
 
-# MAIN rate 50Hz for servos SPT4412LV
+# Tilt servos on MAIN 1-4
+param set-default PWM_MAIN_FUNC1 201
+param set-default PWM_MAIN_FUNC2 202
+param set-default PWM_MAIN_FUNC3 203
+param set-default PWM_MAIN_FUNC4 204
+
+# AUX (motors): 400 Hz PWM. For DShot, set DSHOT_CONFIG instead.
+param set-default PWM_AUX_RATE 400
+param set-default PWM_AUX_MIN  1000
+param set-default PWM_AUX_MAX  2000
+param set-default PWM_AUX_DISARM 900
+
+# MAIN (servos): 50 Hz PWM, 1000-2000 us range
 param set-default PWM_MAIN_RATE 50
 param set-default PWM_MAIN_MIN  1000
 param set-default PWM_MAIN_MAX  2000
+param set-default PWM_MAIN_DISARM 1500
 
-# Force IO coprocessor for MAIN outputs
+# Use IO coprocessor for MAIN (safer for servos)
 param set-default SYS_USE_IO 1

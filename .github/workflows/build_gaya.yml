@@ -1,0 +1,119 @@
+name: Build gaya (px4_fmu-v6c)
+
+# Builds the firmware on a clean OmniQuad upstream clone with the user's
+# customisations layered on top. This avoids the broken submodule state
+# in this repository's index (the .gitmodules entries exist but the tree
+# has no 160000 commit pointers, so a normal recursive checkout produces
+# empty submodule directories).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ROMFS/px4fmu_common/init.d/airframes/22001_quad_tilt_custom'
+      - 'src/modules/control_allocator/module.yaml'
+      - 'boards/px4/fmu-v6c/default.px4board'
+      - '.github/workflows/build_gaya.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: build px4_fmu-v6c with gaya + CRSF
+    runs-on: ubuntu-latest
+    container: px4io/px4-dev-nuttx-focal:2021-09-08
+    timeout-minutes: 60
+
+    steps:
+      - name: Mark workspaces safe for git
+        run: git config --global --add safe.directory '*'
+
+      - name: Checkout user repo (this fork)
+        uses: actions/checkout@v4
+        with:
+          path: user-repo
+          fetch-depth: 1
+
+      - name: Clone OmniQuad upstream with proper submodules
+        run: |
+          git clone --branch omniquad https://github.com/omniquad-research/PX4-OmniQuad.git build-tree
+          cd build-tree
+          git submodule update --init --recursive
+
+      - name: Apply user gaya airframe + module.yaml patch + CRSF board config
+        run: |
+          set -e
+          # 1. gaya airframe init script
+          cp user-repo/ROMFS/px4fmu_common/init.d/airframes/22001_quad_tilt_custom \
+             build-tree/ROMFS/px4fmu_common/init.d/airframes/22001_quad_tilt_custom
+
+          # 2. Register airframe in the build (idempotent)
+          CMAKE=build-tree/ROMFS/px4fmu_common/init.d/airframes/CMakeLists.txt
+          if ! grep -q '22001_quad_tilt_custom' "$CMAKE"; then
+            sed -i '/14001_generic_mc_with_tilt/a\\t22001_quad_tilt_custom' "$CMAKE"
+          fi
+
+          # 3. Add CA_AIRFRAME enum value 13 to module.yaml (idempotent)
+          MOD_YAML=build-tree/src/modules/control_allocator/module.yaml
+          if ! grep -q "13: Tilting Multirotor" "$MOD_YAML"; then
+            sed -i 's/                10: Helicopter$/                10: Helicopter\n                13: Tilting Multirotor (OmniQuad)/' "$MOD_YAML"
+          fi
+
+          # 4. CRSF board config (overwrite default.px4board with user's)
+          cp user-repo/boards/px4/fmu-v6c/default.px4board \
+             build-tree/boards/px4/fmu-v6c/default.px4board
+
+          echo "=== Applied changes ==="
+          echo "--- 22001_quad_tilt_custom ---"
+          head -5 build-tree/ROMFS/px4fmu_common/init.d/airframes/22001_quad_tilt_custom
+          echo "--- module.yaml CA_AIRFRAME enum ---"
+          grep -A1 "10: Helicopter" "$MOD_YAML"
+          echo "--- default.px4board CRSF line ---"
+          grep -E 'CRSF|RC_INPUT' build-tree/boards/px4/fmu-v6c/default.px4board || true
+          echo "--- airframes CMakeLists has 22001 ---"
+          grep '22001' "$CMAKE" || true
+
+      - name: ccache cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-px4_fmu-v6c-${{ github.run_id }}
+          restore-keys: ccache-px4_fmu-v6c-
+
+      - name: Configure ccache
+        run: |
+          mkdir -p ~/.ccache
+          {
+            echo "base_dir = ${GITHUB_WORKSPACE}"
+            echo "compression = true"
+            echo "compression_level = 6"
+            echo "max_size = 200M"
+            echo "hash_dir = false"
+          } > ~/.ccache/ccache.conf
+          ccache -s
+          ccache -z
+
+      - name: Build px4_fmu-v6c_default
+        working-directory: build-tree
+        run: make px4_fmu-v6c_default
+
+      - name: Verify gaya is baked into the firmware
+        working-directory: build-tree
+        run: |
+          echo "=== artifacts ==="
+          ls -lh build/px4_fmu-v6c_default/*.px4 build/px4_fmu-v6c_default/*.bin || true
+          echo ""
+          echo "=== gaya / 22001 / CRSF strings in ELF ==="
+          strings build/px4_fmu-v6c_default/px4_fmu-v6c_default.elf | grep -E 'gaya|22001_quad_tilt|crsf|Tilting Multirotor' | sort -u | head -30
+          echo ""
+          echo "=== ccache final stats ==="
+          ccache -s
+
+      - name: Upload .px4 firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: gaya-px4_fmu-v6c
+          path: |
+            build-tree/build/px4_fmu-v6c_default/*.px4
+            build-tree/build/px4_fmu-v6c_default/*.bin
+          if-no-files-found: error
+          retention-days: 30

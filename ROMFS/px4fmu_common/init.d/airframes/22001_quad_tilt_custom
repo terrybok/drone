@@ -2,7 +2,7 @@
 #
 # @name gaya
 #
-# @type Tilting Multirotor
+# @type Quadrotor x
 # @class Copter
 #
 # @output AUX1 Motor 1 front-right (XING2 2809 1250KV)

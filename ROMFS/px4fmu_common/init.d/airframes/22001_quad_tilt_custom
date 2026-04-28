@@ -60,38 +60,26 @@ param set-default CA_ROTOR3_KM -0.05
 param set-default CA_ROTOR3_TILT 4
 
 # ---- 4 tilt servos ----
-# TDs derived from the official OmniQuad Gazebo model
-# (omniquad-research/PX4-SITL_gazebo-classic models/omniquad/omniquad.sdf):
-# each tilt joint rotates around its arm direction, so by right-hand rule
-# the +alpha tilt direction is (arm_angle - 90) deg, NOT arm + 90.
-#
-#   Tilt 0 / Servo 1 -> Motor 1 (front-right, arm  45) -> TD = 315 (front-left)
-#   Tilt 1 / Servo 2 -> Motor 2 (rear-left,  arm 225) -> TD = 135 (rear-right)
-#   Tilt 2 / Servo 3 -> Motor 3 (front-left, arm 315) -> TD = 225 (rear-left)
-#   Tilt 3 / Servo 4 -> Motor 4 (rear-right, arm 135) -> TD =  45 (front-right)
-#
-# QGC dropdown only displays the four cardinal TDs; the parameter still
-# stores 0..359 and the allocator reads it correctly. The "Unknown: 315"
-# label is cosmetic.
-#
-# Range +/-30 is conservative; the simulation uses +/-2 rad (~+/-114).
+# Matching the official OmniQuad SITL airframe (25001_gazebo-classic_omniquad):
+#   * same MIN/MAX (+/-30) for the four tilts -- the directional differentiation
+#     is NOT done via min/max, it comes from each servo's mechanical rotation
+#     axis (built into the geometry) and the OmniQuad TiltingMultirotor
+#     allocator that uses the CA_ROTOR*_TILT links and rotor positions.
+#   * CA_SV_TL*_TD intentionally NOT set -> default 0 (Towards Front), as in
+#     the reference airframe.
 param set-default CA_SV_TL_COUNT 4
 
 param set-default CA_SV_TL0_MINA -30.0
 param set-default CA_SV_TL0_MAXA  30.0
-param set-default CA_SV_TL0_TD   315
 
 param set-default CA_SV_TL1_MINA -30.0
 param set-default CA_SV_TL1_MAXA  30.0
-param set-default CA_SV_TL1_TD   135
 
 param set-default CA_SV_TL2_MINA -30.0
 param set-default CA_SV_TL2_MAXA  30.0
-param set-default CA_SV_TL2_TD   225
 
 param set-default CA_SV_TL3_MINA -30.0
 param set-default CA_SV_TL3_MAXA  30.0
-param set-default CA_SV_TL3_TD    45
 
 # ---- Output assignment (Pixhawk 6C) ----
 # Motors -> PWM AUX (FMU direct, fast PWM/DShot)

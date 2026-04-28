@@ -55,6 +55,13 @@ param set-default CA_ROTOR3_PY  0.166
 param set-default CA_ROTOR3_PZ  0.0
 param set-default CA_ROTOR3_KM -0.05
 
+# ---- Link each rotor to its tilt servo (1-indexed; 0 = no tilt) ----
+# Rotor 0 -> Tilt 1 (CA_SV_TL0_*), Rotor 1 -> Tilt 2 (CA_SV_TL1_*), etc.
+param set-default CA_ROTOR0_TILT 1
+param set-default CA_ROTOR1_TILT 2
+param set-default CA_ROTOR2_TILT 3
+param set-default CA_ROTOR3_TILT 4
+
 # ---- 4 tilt servos ----
 param set-default CA_SV_TL_COUNT 4
 

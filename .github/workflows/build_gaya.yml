@@ -13,6 +13,7 @@ on:
       - 'ROMFS/px4fmu_common/init.d/airframes/22001_quad_tilt_custom'
       - 'src/modules/control_allocator/module.yaml'
       - 'boards/px4/fmu-v6c/default.px4board'
+      - 'boards/px4/fmu-v6c/src/manifest.c'
       - '.github/workflows/build_gaya.yml'
   workflow_dispatch:
 
@@ -62,6 +63,11 @@ jobs:
           cp user-repo/boards/px4/fmu-v6c/default.px4board \
              build-tree/boards/px4/fmu-v6c/default.px4board
 
+          # 5. Force PX4IO present in manifest (omniquad fork ships .present=0 for
+          #    V6C revisions 1+, which makes the IO driver abort with "Not Supported")
+          cp user-repo/boards/px4/fmu-v6c/src/manifest.c \
+             build-tree/boards/px4/fmu-v6c/src/manifest.c
+
           echo "=== Applied changes ==="
           echo "--- 22001_quad_tilt_custom ---"
           head -5 build-tree/ROMFS/px4fmu_common/init.d/airframes/22001_quad_tilt_custom
@@ -71,6 +77,8 @@ jobs:
           grep -E 'CRSF|RC_INPUT' build-tree/boards/px4/fmu-v6c/default.px4board || true
           echo "--- airframes CMakeLists has 22001 ---"
           grep '22001' "$CMAKE" || true
+          echo "--- manifest.c v0610 .present (must be 1) ---"
+          grep -A2 'hw_mft_list_v0610' build-tree/boards/px4/fmu-v6c/src/manifest.c | head -10
 
       - name: ccache cache
         uses: actions/cache@v4

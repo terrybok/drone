@@ -60,23 +60,35 @@ param set-default CA_ROTOR3_KM -0.05
 param set-default CA_ROTOR3_TILT 4
 
 # ---- 4 tilt servos ----
+# Full OmniQuad geometry: each servo's rotation axis is along its own arm,
+# so the tilt direction (TD) is perpendicular to the arm = arm_angle + 90 deg.
+# Arms on an X-quad sit at 45/135/225/315 deg => TDs at 135/225/315/45.
+#
+#   Tilt 0 / Servo 1 -> Motor 1 (front-right, arm  45) -> TD = 135 (rear-right)
+#   Tilt 1 / Servo 2 -> Motor 2 (rear-left,  arm 225) -> TD = 315 (front-left)
+#   Tilt 2 / Servo 3 -> Motor 3 (front-left, arm 315) -> TD =  45 (front-right)
+#   Tilt 3 / Servo 4 -> Motor 4 (rear-right, arm 135) -> TD = 225 (rear-left)
+#
+# This pattern lets the allocator decouple xy-translation from body tilt
+# (true 6-DoF omnidirectional). Range +/-30 deg keeps each servo well within
+# safe mechanical travel (extend later after bench validation).
 param set-default CA_SV_TL_COUNT 4
 
 param set-default CA_SV_TL0_MINA -30.0
 param set-default CA_SV_TL0_MAXA  30.0
-param set-default CA_SV_TL0_TD    90
+param set-default CA_SV_TL0_TD   135
 
 param set-default CA_SV_TL1_MINA -30.0
 param set-default CA_SV_TL1_MAXA  30.0
-param set-default CA_SV_TL1_TD    90
+param set-default CA_SV_TL1_TD   315
 
 param set-default CA_SV_TL2_MINA -30.0
 param set-default CA_SV_TL2_MAXA  30.0
-param set-default CA_SV_TL2_TD    90
+param set-default CA_SV_TL2_TD    45
 
 param set-default CA_SV_TL3_MINA -30.0
 param set-default CA_SV_TL3_MAXA  30.0
-param set-default CA_SV_TL3_TD    90
+param set-default CA_SV_TL3_TD   225
 
 # ---- Output assignment (Pixhawk 6C) ----
 # Motors -> PWM AUX (FMU direct, fast PWM/DShot)

@@ -1,4 +1,5 @@
 name: Build gaya (px4_fmu-v6c)
+run-name: "gaya v3 - PX4IO FORCE FIX (${{ github.sha }})"
 
 # Builds the firmware on a clean OmniQuad upstream clone with the user's
 # customisations layered on top. This avoids the broken submodule state

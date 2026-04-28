@@ -125,13 +125,33 @@ static px4_hw_mft_list_entry_t mft_lists[] = {
  *
  ************************************************************************************/
 
+/*
+ * GAYA PATCH: force PX4IO present unconditionally on every V6C variant.
+ * The original lookup falls back to device_unsupported (.present=0) for any
+ * hw_ver_rev not in mft_lists[], which kills the IO driver on hardware
+ * revisions that aren't enumerated. The 6C always has PX4IO physically, so
+ * we always report it as present and let the IO driver verify by talking
+ * to the chip.
+ */
+static const px4_hw_mft_item_t gaya_io_forced_present = {
+	.present     = 1,
+	.mandatory   = 1,
+	.connection  = px4_hw_con_onboard,
+};
+
 __EXPORT px4_hw_mft_item board_query_manifest(px4_hw_mft_item_id_t id)
 {
 	static px4_hw_mft_list_entry boards_manifest = px4_hw_mft_list_uninitialized;
+	static bool ver_logged = false;
 
 	if (boards_manifest == px4_hw_mft_list_uninitialized) {
 		uint32_t ver_rev = board_get_hw_version() << 16;
 		ver_rev |= board_get_hw_revision();
+
+		if (!ver_logged) {
+			syslog(LOG_INFO, "[gaya] V6C hw_ver_rev=0x%08" PRIx32 "\n", ver_rev);
+			ver_logged = true;
+		}
 
 		for (unsigned i = 0; i < arraySize(mft_lists); i++) {
 			if (mft_lists[i].hw_ver_rev == ver_rev) {
@@ -141,8 +161,12 @@ __EXPORT px4_hw_mft_item board_query_manifest(px4_hw_mft_item_id_t id)
 		}
 
 		if (boards_manifest == px4_hw_mft_list_uninitialized) {
-			syslog(LOG_ERR, "[boot] Board %08" PRIx32 " is not supported!\n", ver_rev);
+			syslog(LOG_ERR, "[gaya] Board 0x%08" PRIx32 " not in mft_lists, forcing PX4IO present anyway\n", ver_rev);
 		}
+	}
+
+	if (id == PX4_MFT_PX4IO) {
+		return &gaya_io_forced_present;
 	}
 
 	px4_hw_mft_item rv = &device_unsupported;
